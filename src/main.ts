@@ -4,4 +4,4 @@ function launch(file: string) {
   });
 }
 
-launch("procedural_terrain");
+launch("post_processing");
