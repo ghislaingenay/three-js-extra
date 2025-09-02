@@ -4,4 +4,4 @@ function launch(file: string) {
   });
 }
 
-launch("performance_tips");
+launch("intro_loading_progress");
