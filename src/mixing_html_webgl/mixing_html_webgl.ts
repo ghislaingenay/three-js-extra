@@ -2,11 +2,23 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { gsap } from "gsap";
-
+import canvas from "../utils/canvas";
 /**
  * Loaders
  */
-const loadingBarElement = document.querySelector(".loading-bar");
+const loadingBarElement = document.querySelector(
+  ".loading-bar"
+) as unknown as HTMLDivElement;
+
+const raycaster = new THREE.Raycaster();
+const points = [
+  {
+    position: new THREE.Vector3(1.55, 0.3, -0.6),
+    element: document.querySelector(".point-0") as unknown as HTMLDivElement,
+  },
+];
+
+let sceneReady = false;
 const loadingManager = new THREE.LoadingManager(
   // Loaded
   () => {
@@ -23,6 +35,9 @@ const loadingManager = new THREE.LoadingManager(
       loadingBarElement.classList.add("ended");
       loadingBarElement.style.transform = "";
     }, 500);
+    window.setTimeout(() => {
+      sceneReady = true;
+    }, 2000);
   },
 
   // Progress
@@ -39,10 +54,11 @@ const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager);
  * Base
  */
 // Debug
-const debugObject = {};
+const debugObject = {
+  envMapIntensity: 2.5,
+};
 
 // Canvas
-const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
@@ -97,12 +113,12 @@ const updateAllMaterials = () => {
  * Environment map
  */
 const environmentMap = cubeTextureLoader.load([
-  "/textures/environmentMaps/0/px.jpg",
-  "/textures/environmentMaps/0/nx.jpg",
-  "/textures/environmentMaps/0/py.jpg",
-  "/textures/environmentMaps/0/ny.jpg",
-  "/textures/environmentMaps/0/pz.jpg",
-  "/textures/environmentMaps/0/nz.jpg",
+  "/mixing_html_webgl/textures/environmentMaps/0/px.jpg",
+  "/mixing_html_webgl/textures/environmentMaps/0/nx.jpg",
+  "/mixing_html_webgl/textures/environmentMaps/0/py.jpg",
+  "/mixing_html_webgl/textures/environmentMaps/0/ny.jpg",
+  "/mixing_html_webgl/textures/environmentMaps/0/pz.jpg",
+  "/mixing_html_webgl/textures/environmentMaps/0/nz.jpg",
 ]);
 
 environmentMap.colorSpace = THREE.SRGBColorSpace;
@@ -115,13 +131,16 @@ debugObject.envMapIntensity = 2.5;
 /**
  * Models
  */
-gltfLoader.load("/models/DamagedHelmet/glTF/DamagedHelmet.gltf", (gltf) => {
-  gltf.scene.scale.set(2.5, 2.5, 2.5);
-  gltf.scene.rotation.y = Math.PI * 0.5;
-  scene.add(gltf.scene);
+gltfLoader.load(
+  "/mixing_html_webgl/models/DamagedHelmet/glTF/DamagedHelmet.gltf",
+  (gltf) => {
+    gltf.scene.scale.set(2.5, 2.5, 2.5);
+    gltf.scene.rotation.y = Math.PI * 0.5;
+    scene.add(gltf.scene);
 
-  updateAllMaterials();
-});
+    updateAllMaterials();
+  }
+);
 
 /**
  * Lights
@@ -190,9 +209,37 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * Animate
  */
+
+const updatePoints = () => {
+  for (const point of points) {
+    const screenPosition = point.position.clone();
+    screenPosition.project(camera);
+
+    raycaster.setFromCamera(
+      new THREE.Vector2(screenPosition.x, screenPosition.y),
+      camera
+    );
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    if (intersects.length === 0) point.element.classList.add("visible");
+    else {
+      const intersectionDistance = intersects[0].distance;
+      const pointDistance = point.position.distanceTo(camera.position);
+      if (intersectionDistance < pointDistance) {
+        point.element.classList.remove("visible");
+      } else {
+        point.element.classList.add("visible");
+      }
+    }
+    const translateX = screenPosition.x * sizes.width * 0.5;
+    const translateY = screenPosition.y * sizes.height * 0.5;
+    point.element.style.transform = `translateX(${translateX}px) translateY(${-translateY}px)`;
+  }
+};
 const tick = () => {
   // Update controls
   controls.update();
+
+  if (sceneReady) updatePoints();
 
   // Render
   renderer.render(scene, camera);
