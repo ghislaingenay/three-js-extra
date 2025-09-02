@@ -4,4 +4,4 @@ function launch(file: string) {
   });
 }
 
-launch("intro_loading_progress");
+launch("mixing_html_webgl");
