@@ -4,4 +4,4 @@ function launch(file: string) {
   });
 }
 
-launch("post_processing");
+launch("performance_tips");

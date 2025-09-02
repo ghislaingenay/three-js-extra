@@ -1,12 +1,14 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import canvas from "../utils/canvas";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 /**
  * Base
  */
+const stats = new Stats();
+stats.showPanel(0);
 
-// Scene
-const scene = new THREE.Scene();
+document.body.appendChild(stats.dom);
 
 /**
  * Textures
@@ -14,6 +16,7 @@ const scene = new THREE.Scene();
 const textureLoader = new THREE.TextureLoader();
 const displacementTexture = textureLoader.load("/textures/displacementMap.png");
 
+const scene = new THREE.Scene();
 /**
  * Sizes
  */
@@ -122,6 +125,7 @@ scene.add(directionalLight);
 const clock = new THREE.Clock();
 
 const tick = () => {
+  stats.begin();
   const elapsedTime = clock.getElapsedTime();
 
   // Update test mesh
@@ -135,6 +139,7 @@ const tick = () => {
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
+  stats.end();
 };
 
 export default tick;
